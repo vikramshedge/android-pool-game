@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Button
+        android:id="@+id/loadStateButtonPool"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="L P"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/saveStateButtonPool"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:id="@+id/saveStateButtonPool"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="S P"
+        app:layout_constraintTop_toBottomOf="@id/loadStateButtonPool"
+        app:layout_constraintBottom_toTopOf="@id/loadStateButtonGamezy"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:id="@+id/loadStateButtonGamezy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="L G"
+        app:layout_constraintBottom_toTopOf="@id/saveStateButtonGamezy"
+        app:layout_constraintTop_toBottomOf="@id/saveStateButtonPool"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:id="@+id/saveStateButtonGamezy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="S G"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/loadStateButtonGamezy"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

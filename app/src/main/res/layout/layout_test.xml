@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/loadStateButtonPool"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_toStartOf="@id/saveStateButtonPool"
+        android:text="Load State"
+        />
+
+    <Button
+        android:id="@+id/saveStateButtonPool"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:text="Save state"
+        android:layout_toStartOf="@id/loadStateButtonGamezy"
+        />
+
+    <Button
+        android:id="@+id/loadStateButtonGamezy"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_toStartOf="@id/saveStateButtonGamezy"
+        />
+
+    <Button
+        android:id="@+id/saveStateButtonGamezy"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        />
+
+</RelativeLayout>
