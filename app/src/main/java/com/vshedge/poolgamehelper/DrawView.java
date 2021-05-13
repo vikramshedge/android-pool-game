@@ -202,7 +202,8 @@ public class DrawView extends View {
                                     //only start point move
                                     startX1 = dx + startX1;
                                     startY1 = dy + startY1;
-//                                    sunPt = new PointF(startX1, startY1);
+//                                    if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7)
+                                        sunPt = new PointF(startX1, startY1);
                                 } else if (multiTapCount == 2) {
                                     //move both start and end point
                                     if (Double.compare(firstDistance, secondDistance) < 0) {
@@ -214,7 +215,7 @@ public class DrawView extends View {
                                         endX1 = dx + endX1;
                                         endY1 = dy + endY1;
                                     }
-//                                    sunPt = new PointF(endX1, endY1);
+                                    sunPt = new PointF(endX1, endY1);
                                 } else if (multiTapCount == 3) {
                                     // set ball radius
                                     DrawView.rBall = dy + DrawView.rBall;
@@ -311,7 +312,8 @@ public class DrawView extends View {
         if (DrawView.multiTapCount == 2) {
             this.sunPt = new PointF(DrawView.endX1, DrawView.endY1);
         } else {
-            this.sunPt = new PointF(DrawView.startX1, DrawView.startY1);
+            if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7)
+                this.sunPt = new PointF(DrawView.startX1, DrawView.startY1);
         }
 
         if (DrawView.currentVerticesTobeShown == 1) {
@@ -471,23 +473,6 @@ public class DrawView extends View {
         return null;
     }
 
-    /*private float findAngleWithX(PointF sunPt, PointF vertexPt) {
-        float num  = (sunPt.y - vertexPt.y);
-        float din  = (sunPt.x - vertexPt.x);
-
-        if (din == 0) {
-            return 90.0f;
-        }
-        float slope = (float)Math.atan(num/din);
-        float angle = slope * 180 / (float)Math.PI;
-
-        return Math.abs(angle);
-    }
-
-    private float findAngleWithY(PointF sunPt, PointF vertexPt) {
-        return (90.0f - this.findAngleWithX(sunPt, vertexPt));
-    }*/
-
     public double angle(PointF vertexPt, PointF startPt, PointF endPt) {
         final double x = (new Float(vertexPt.x)).doubleValue();
         final double y = (double)vertexPt.y;
@@ -518,8 +503,8 @@ public class DrawView extends View {
         DrawView.xMaxR = DrawView.xMax - DrawView.rBall;
         DrawView.yMaxR = DrawView.yMax - DrawView.rBall;
 
+        PointF startPt = new PointF(DrawView.startX1, DrawView.startY1);
         if (DrawView.multiTapCount == 2) {
-            PointF startPt = new PointF(DrawView.startX1, DrawView.startY1);
             circlePaint.setColor(Color.BLACK); directLinePaint.setColor(Color.BLACK);
             this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, true, true);
 
@@ -532,10 +517,13 @@ public class DrawView extends View {
             this.drawAngel(canvas, startPt, this.sunPt, this.bottomVertex, directLinePaint, circlePaint);
 
         } else {
-            circlePaint.setColor(Color.BLACK); directLinePaint.setColor(Color.BLACK);
-//            this.drawDirectLinesToPots(canvas, DrawView.startX1, DrawView.startY1);
+            if (startPt != null && this.sunPt != null && (DrawView.currentVerticesTobeShown ==  0 || DrawView.currentVerticesTobeShown ==7)) {
+                circlePaint.setColor(Color.BLACK);
+                directLinePaint.setColor(Color.BLACK);
+                this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, true, true);
+            }
         }
-//        this.drawDirectLinesToPots(canvas);
+        this.drawDirectLinesToPots(canvas);
 
 
         //draw table borders
@@ -661,7 +649,10 @@ public class DrawView extends View {
 
         }
 
-//        DrawView.currentVerticesTobeShown = returnValue;
-        DrawView.currentVerticesTobeShown = 7;
+        if (returnValue > 0)
+            multiTapCount = 1;
+
+        DrawView.currentVerticesTobeShown = returnValue;
+//        DrawView.currentVerticesTobeShown = 7;
     }
 }
