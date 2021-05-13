@@ -51,6 +51,10 @@ public class DrawView extends View {
     private PointF bottomCenterPt_LeftVertex;
     private PointF bottomCenterPt_TopVertex;
     private PointF bottomCenterPt_RightVertex;
+    private PointF leftVertex;
+    private PointF topVertex;
+    private PointF rightVertex;
+    private PointF bottomVertex;
 
     private static int currentVerticesTobeShown = 0;
 
@@ -278,7 +282,7 @@ public class DrawView extends View {
                 DrawView.endX1 = event.getX();
                 DrawView.endY1 = event.getY();
             } else {
-                if (DrawView.currentVerticesTobeShown == 0) {
+                if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7) {
                     DrawView.startX1 = event.getX();
                     DrawView.startY1 = event.getY();
 //                } else {
@@ -333,7 +337,6 @@ public class DrawView extends View {
             bottomLeftPt_topVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, true, DrawView.yMinR);
             bottomLeftPt_RightVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, false, DrawView.xMaxR);
         } else {
-            ;
             bottomLeftPt_topVertex = null;
             bottomLeftPt_RightVertex = null;
         }
@@ -368,10 +371,26 @@ public class DrawView extends View {
             bottomCenterPt_TopVertex = null;
             bottomCenterPt_RightVertex = null;
         }
+
+        if (DrawView.currentVerticesTobeShown == 7) {
+            PointF startPt = new PointF(DrawView.startX1, DrawView.startY1);
+            leftVertex = this.getVertexPoint(startPt, this.sunPt, false, DrawView.xMinR);
+            rightVertex = this.getVertexPoint(startPt, this.sunPt, false, DrawView.xMaxR);
+            topVertex = this.getVertexPoint(startPt, this.sunPt, true, DrawView.yMinR);
+            bottomVertex = this.getVertexPoint(startPt, this.sunPt, true, DrawView.yMaxR);
+        } else {
+            leftVertex = null;
+            rightVertex = null;
+            topVertex = null;
+            bottomVertex = null;
+
+        }
     }
 
     private PointF getVertexPoint(PointF pt1, PointF pt2, boolean isHorizontal, float vertexDimVar){
 
+        float dxLoopCounter = 10.0f;
+        boolean isStartPointLowerBound;
         if (isHorizontal) {
             if (pt1.y == vertexDimVar || pt2.y == vertexDimVar)
                 return null;
@@ -384,22 +403,27 @@ public class DrawView extends View {
         if (isHorizontal) {
             if (pt1.x < pt2.x) {
                 startPt = pt1; endPt = pt2;
+                isStartPointLowerBound = true;
             }else {
                 startPt = pt2; endPt = pt1;
+                isStartPointLowerBound = false;
             }
         }else {
             if (pt1.y < pt2.y) {
                 startPt = pt1; endPt = pt2;
+                isStartPointLowerBound = true;
             }else {
                 startPt = pt2; endPt = pt1;
+                isStartPointLowerBound = false;
             }
         }
         
-        float i = isHorizontal ? startPt.x : startPt.y;
+        float lowerBound = isHorizontal ? startPt.x : startPt.y;
         float upperBound = isHorizontal ? endPt.x : endPt.y;
+
         PointF vertexPoint;
         this.iterationCount = 0;
-        vertexPoint = this.getVertexRecursion(i, isHorizontal, vertexDimVar, startPt, endPt, 10.0f, upperBound); // vertexDimVar is yMin for topEdge
+        vertexPoint = this.getVertexRecursion(lowerBound, upperBound, isHorizontal, vertexDimVar, startPt, endPt, dxLoopCounter, isStartPointLowerBound); // vertexDimVar is yMin for topEdge
 //        vertexPoint = new PointF(vertexDimVar, (yMaxR - yMinR)/2 + yMinR);
 //        Toast.makeText(getContext(), "Iteration count: " + iterationCount, Toast.LENGTH_SHORT).show();
         if (vertexPoint != null) {
@@ -413,7 +437,7 @@ public class DrawView extends View {
         return vertexPoint;
     }
 
-    private PointF getVertexRecursion(float i, boolean isHorizontal, float vertexDimVar, PointF startPt, PointF endPt, float dxLooVar, float upperBound) {
+    private PointF getVertexRecursion(float i, float upperBound, boolean isHorizontal, float vertexDimVar, PointF startPt, PointF endPt, float dxLooVar, boolean isStartPointLowerBond ) {
 
         while ( i < upperBound) {
             PointF vertexPt = isHorizontal ? new PointF(i, vertexDimVar) : new PointF(vertexDimVar, i); // vertexDimVar is yMinR for topEdge
@@ -427,19 +451,16 @@ public class DrawView extends View {
             }
 
 //            int diff = Double.compare(leftAngle, rightAngle);
-            double diff = Math.abs(leftAngle - rightAngle);
-            final double angleDeviation = 13.74408931;
-//            if (diff == 0) {
-            if (diff == angleDeviation ) {
-//                this.printToast("Iteration: " + this.iterationCount);
+            double angleRatio = Math.abs(leftAngle/rightAngle);
+            double angleDeviation = isStartPointLowerBond ? 0.591711719678775 : 1.690012157512910;
+            int diff = Double.compare(angleRatio, angleDeviation);
+            if (diff == 0) {
                 return vertexPt;
-//            } else if ( diff > 0){
-            } else if (diff < angleDeviation) {
+            } else if ( diff > 0) {
                 if (Math.abs(dxLooVar) < 0.01) {
-//                    this.printToast("Iteration: " + this.iterationCount);
                     return vertexPt;
                 } else {
-                    return this.getVertexRecursion(i, isHorizontal, vertexDimVar, endPt, startPt, -dxLooVar/10.0f, upperBound);
+                    return this.getVertexRecursion(i, upperBound, isHorizontal, vertexDimVar, endPt, startPt, -dxLooVar/10.0f, isStartPointLowerBond);
                 }
             }
             iterationCount++;
@@ -498,14 +519,23 @@ public class DrawView extends View {
         DrawView.yMaxR = DrawView.yMax - DrawView.rBall;
 
         if (DrawView.multiTapCount == 2) {
+            PointF startPt = new PointF(DrawView.startX1, DrawView.startY1);
             circlePaint.setColor(Color.BLACK); directLinePaint.setColor(Color.BLACK);
-            this.drawDirectLine(canvas, new PointF(DrawView.startX1, DrawView.startY1), this.sunPt, directLinePaint, circlePaint, true, true);
-//            this.drawDirectLinesToPots(canvas, DrawView.endX1, DrawView.endY1);
+            this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, true, true);
+
+            circlePaint.setColor(Color.BLACK);
+            directLinePaint.setColor(Color.BLACK);
+            this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, false, true);
+            this.drawAngel(canvas, startPt, this.sunPt, this.leftVertex, directLinePaint, circlePaint);
+            this.drawAngel(canvas, startPt, this.sunPt, this.topVertex, directLinePaint, circlePaint);
+            this.drawAngel(canvas, startPt, this.sunPt, this.rightVertex, directLinePaint, circlePaint);
+            this.drawAngel(canvas, startPt, this.sunPt, this.bottomVertex, directLinePaint, circlePaint);
+
         } else {
             circlePaint.setColor(Color.BLACK); directLinePaint.setColor(Color.BLACK);
 //            this.drawDirectLinesToPots(canvas, DrawView.startX1, DrawView.startY1);
         }
-        this.drawDirectLinesToPots(canvas);
+//        this.drawDirectLinesToPots(canvas);
 
 
         //draw table borders
@@ -631,6 +661,7 @@ public class DrawView extends View {
 
         }
 
-        DrawView.currentVerticesTobeShown = returnValue;
+//        DrawView.currentVerticesTobeShown = returnValue;
+        DrawView.currentVerticesTobeShown = 7;
     }
 }
