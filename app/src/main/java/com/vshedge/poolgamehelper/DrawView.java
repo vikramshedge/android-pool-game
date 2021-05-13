@@ -457,10 +457,10 @@ public class DrawView extends View {
             if (diff == 0) {
                 return vertexPt;
             } else if ( diff > 0) {
-                if (Math.abs(dxLooVar) < 0.01) {
+                if (Math.abs(dxLooVar) < 0.001) {
                     return vertexPt;
                 } else {
-                    return this.getVertexRecursion(i, upperBound, isHorizontal, vertexDimVar, endPt, startPt, -dxLooVar/10.0f, isStartPointLowerBond);
+                    return this.getVertexRecursion(i, upperBound, isHorizontal, vertexDimVar, startPt, endPt, -dxLooVar/10.0f, isStartPointLowerBond);
                 }
             }
             iterationCount++;
