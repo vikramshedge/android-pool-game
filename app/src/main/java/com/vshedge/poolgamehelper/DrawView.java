@@ -426,11 +426,15 @@ public class DrawView extends View {
                 rightAngle = this.angle(vertexPt, endPt, new PointF(endPt.x, i));
             }
 
-            int diff = Double.compare(leftAngle, rightAngle);
-            if (diff == 0) {
+//            int diff = Double.compare(leftAngle, rightAngle);
+            double diff = Math.abs(leftAngle - rightAngle);
+            final double angleDeviation = 13.74408931;
+//            if (diff == 0) {
+            if (diff == angleDeviation ) {
 //                this.printToast("Iteration: " + this.iterationCount);
                 return vertexPt;
-            } else if ( diff > 0){
+//            } else if ( diff > 0){
+            } else if (diff < angleDeviation) {
                 if (Math.abs(dxLooVar) < 0.01) {
 //                    this.printToast("Iteration: " + this.iterationCount);
                     return vertexPt;
