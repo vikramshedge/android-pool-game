@@ -205,6 +205,9 @@ public class WidgetService extends Service {
     private void saveCurrentStateValues(int choice) {
         Toast.makeText(this, "Save state is disabled : " + (choice == 1 ? "Pool":"Gamezy"), Toast.LENGTH_SHORT).show();
 //        Utilities.saveCurrentPrefValues(this, choice);
+        if (choice == 1) {
+            this.drawView.setStartToEndVertices();
+        }
     }
 
     private void toggleTouch() {

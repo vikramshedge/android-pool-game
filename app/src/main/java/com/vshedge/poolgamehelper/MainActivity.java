@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.graphics.PointF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Button launchButton;
     Button showCanvasButton;
     DrawView drawView;
+    DrawViewMainActivity drawViewMain;
     WidgetService widgetService;
 
     @Override
@@ -66,22 +68,44 @@ public class MainActivity extends AppCompatActivity {
 
         showCanvasButton = (Button) findViewById(R.id.showCanvas);
         drawView = new DrawView(MainActivity.this);
+        drawViewMain = new DrawViewMainActivity(MainActivity.this);
 
         showCanvasButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                setContentView( drawView);
+//                setContentView(drawView);
+                setContentView( drawViewMain);
 //                addNotification();
+//                setCoordValues();
+                setTestLines();
 
-                TextView tv1 = (TextView)findViewById(R.id.textView);
-                TextView tv2 = (TextView)findViewById(R.id.textView2);
-                TextView tv3 = (TextView)findViewById(R.id.textView3);
-
-                tv1.setText("SunPt :" +DrawView.sunPtDummy.x + ", y: " + DrawView.sunPtDummy.y);
-                tv2.setText("Tg Pt :" +DrawView.targetPt.x + ", y: " + DrawView.targetPt.y);
-                tv3.setText("xMax :" + DrawView.xMaxR);
             }
         });
+    }
+
+    private void setCoordValues() {
+
+        TextView tv1 = (TextView)findViewById(R.id.textView);
+        TextView tv2 = (TextView)findViewById(R.id.textView2);
+        TextView tv3 = (TextView)findViewById(R.id.textView3);
+
+        if (DrawView.sunPtDummy != null)
+            tv1.setText("SunPt :" +DrawView.sunPtDummy.x + ", y: " + DrawView.sunPtDummy.y);
+
+        if (DrawView.targetPt != null)
+            tv2.setText("Tg Pt :" +DrawView.targetPt.x + ", y: " + DrawView.targetPt.y);
+
+//                if (DrawView.)
+        tv3.setText("xMax :" + DrawView.xMaxR);
+    }
+
+    private void setTestLines() {
+        float xMinR = 366.50003f, yMinR = 275.29996f, yMaxR = 966.9f, xMaxR = 1788.8997f, yMin = 332.0f; // yMin is confusing
+        DrawViewMainActivity.startPt = new PointF(1123.7999f, 786.4f);
+        DrawViewMainActivity.endPt = new PointF(xMinR, yMinR);
+        DrawViewMainActivity.deviatedEndPt = new PointF(575.7999f, 278.8f);
+        DrawViewMainActivity.vertexPt = new PointF( 967.0608f,  966.9f);
+        drawViewMain.drawTestCords();
     }
 
     private ServiceConnection mConnection =  new ServiceConnection() {

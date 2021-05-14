@@ -56,7 +56,7 @@ public class DrawView extends View {
     private PointF rightVertex;
     private PointF bottomVertex;
 
-    private static int currentVerticesTobeShown = 0;
+    public static int currentVerticesTobeShown = 0;
 
     public DrawView(Context context) {
         super(context);
@@ -293,14 +293,14 @@ public class DrawView extends View {
             this.setAllVertexPoints();
         }
 
-        this.setStatics(new PointF(DrawView.xMinR, DrawView.yMinR));
+        this.setStatics(null);
         this.invalidate();
 
     }
 
     private void setStatics(PointF targetPt){
         DrawView.vertF = this.topLeftPt_rightVertex;
-        DrawView.targetPt = targetPt;
+        DrawView.targetPt = new PointF(DrawView.startX1, DrawView.startY1);
         DrawView.sunPtDummy = sunPt;
 //        xMinr: 366.50003, yminr:275.29996 ,ymaxr: 966.9, xMaxRr: 1788.8997;
 //        sunPtX: 616.0, y:953.0
@@ -654,5 +654,11 @@ public class DrawView extends View {
 
         DrawView.currentVerticesTobeShown = returnValue;
 //        DrawView.currentVerticesTobeShown = 7;
+    }
+
+    public void setStartToEndVertices(){
+        DrawView.currentVerticesTobeShown = 7;
+        this.setAllVertexPoints();
+        invalidate();
     }
 }
