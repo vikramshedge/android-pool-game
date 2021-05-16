@@ -12,6 +12,12 @@ public class CustomPointF extends PointF {
         this.y = y;
     }
 
+    public CustomPointF(PointF pointF) {
+        super(pointF.x, pointF.y);
+        this.x = pointF.x;
+        this.y = pointF.y;
+    }
+
     public float getX() {
         return x;
     }

@@ -1,23 +1,23 @@
 package com.vshedge.poolgamehelper;
 
-import android.app.Application;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.graphics.drawable.shapes.OvalShape;
 import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.vshedge.poolgamehelper.utilities.CacheClass;
+import com.vshedge.poolgamehelper.utilities.PotHole;
+
 import java.util.Calendar;
-import java.util.Vector;
 
 public class DrawView extends View {
 
@@ -31,7 +31,8 @@ public class DrawView extends View {
     public static CustomPointF startXPt = new CustomPointF(0, 0);
     public static CustomPointF endXPt = new CustomPointF(300, 300);
 
-    private static int tapCount = 0, multiTapCount = 1;
+    private static int tapCount = 0;
+    private static int multiTapCount = 1;
     private static float xMin = 200, yMin = 200, xMax = 600, yMax = 900, rXY = 0;
     public static float xMinR = 400, yMinR = 200, xMaxR = 600, yMaxR = 300, rXYR = 0;
 
@@ -39,6 +40,13 @@ public class DrawView extends View {
 
 
     public static PointF vertF, sunPtDummy, targetPt;
+
+    private PointF topLeftPt;
+    private PointF topRightPt;
+    private PointF bottomRightPt;
+    private PointF bottomLeftPt;
+    private PointF topCenterPt;
+    private PointF bottomCenterPt;
 
     private CustomPointF sunPt;
     private PointF topLeftPt_rightVertex;
@@ -61,7 +69,8 @@ public class DrawView extends View {
     private PointF bottomVertex;
 
     private static boolean IS_DEVIATED_REFLECTION = false;
-    public static int currentVerticesTobeShown = 0;
+    public static PotHole currentVerticesTobeShown = PotHole.NONE;
+    public static PotHole selectedSatelite = PotHole.NONE;
 
     public DrawView(Context context) {
         super(context);
@@ -108,6 +117,7 @@ public class DrawView extends View {
             float initialTouchX, initialTouchY;
             int prevMotion = 0;
 
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
@@ -136,7 +146,7 @@ public class DrawView extends View {
                                     handler.postDelayed(new Runnable() {
                                         @Override
                                         public void run() {
-                                            if (multiTapCount <= 2 ) {
+                                            if (multiTapCount <= 3 ) {
                                                 updateDrawView(event);
                                             }
                                         }
@@ -191,9 +201,11 @@ public class DrawView extends View {
                                         break;
                                     case 4:
                                         DrawView.rXY = dy + DrawView.rXY;
+                                        Log.i(CacheClass.APP_NAME, "Ball radius : " + DrawView.rXY);
                                         break;
                                 }
                             } else {
+                                selectedSatelite = PotHole.NONE;
                                 if (multiTapCount == 1) {
                                     //only start point move
                                     startXPt = new CustomPointF(dx + startXPt.getX(), dy + startXPt.getY());
@@ -214,7 +226,9 @@ public class DrawView extends View {
                                     printLogs();
                                 } else if (multiTapCount == 3) {
                                     // set ball radius
-                                    DrawView.rBall = dy + DrawView.rBall;
+                                    // commenting out, this has to be included in the separate menu button with group of dimension settings
+//                                    DrawView.rBall = dy + DrawView.rBall;
+//                                    selectedSatelite = getNearestPocket(event);
                                 }
                                 setAllVertexPoints();
                             }
@@ -274,17 +288,23 @@ public class DrawView extends View {
 
         } else {
             // border rect already drawn, proceed with fun of lines
-            this.getNearestPocket(event);
+            if (!isInsideRect(event)) {
+                DrawView.currentVerticesTobeShown = this.getNearestPocket(event);
+                DrawView.multiTapCount = 1;
+            }
+
             if (DrawView.multiTapCount == 2) {
                 endXPt = new CustomPointF(event.getX(), event.getY());
                 printLogs();
-            } else {
-                if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7) {
+            } else if (DrawView.multiTapCount == 1) {
+                if (DrawView.currentVerticesTobeShown == PotHole.NONE || DrawView.currentVerticesTobeShown == PotHole.CENTER) {
                     startXPt = new CustomPointF(event.getX(), event.getY());
                     printLogs();
 //                } else {
 //                    this.setAllVertexPoints();
                 }
+            } else if (DrawView.multiTapCount == 3) {
+                selectedSatelite = getNearestPocket(event);
             }
             this.setAllVertexPoints();
         }
@@ -309,13 +329,13 @@ public class DrawView extends View {
             this.sunPt = endXPt.duplicate();
             printLogs();
         } else {
-            if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7) {
+            if (DrawView.currentVerticesTobeShown == PotHole.NONE || DrawView.currentVerticesTobeShown == PotHole.CENTER) {
                 this.sunPt = startXPt.duplicate();
                 printLogs();
             }
         }
 
-        if (DrawView.currentVerticesTobeShown == 1) {
+        if (DrawView.currentVerticesTobeShown == PotHole.TOP_LEFT) {
             PointF topLeftPt = new PointF(DrawView.xMinR, DrawView.yMinR);
             topLeftPt_rightVertex = this.getVertexPoint(this.sunPt, topLeftPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
             topLeftPt_bottomVertex = this.getVertexPoint(this.sunPt, topLeftPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
@@ -324,7 +344,7 @@ public class DrawView extends View {
             topLeftPt_bottomVertex = null;
         }
 
-        if (DrawView.currentVerticesTobeShown == 2) {
+        if (DrawView.currentVerticesTobeShown == PotHole.TOP_RIGHT) {
             PointF topRightPt = new PointF(DrawView.xMaxR, DrawView.yMinR);
             topRightPt_bottomVertex = this.getVertexPoint(this.sunPt, topRightPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
             topRightPt_leftVertex = this.getVertexPoint(this.sunPt, topRightPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
@@ -333,7 +353,7 @@ public class DrawView extends View {
             topRightPt_leftVertex = null;
         }
 
-        if (DrawView.currentVerticesTobeShown == 3) {
+        if (DrawView.currentVerticesTobeShown == PotHole.BOTTOM_LEFT) {
             PointF bottomLeftPt = new PointF(DrawView.xMinR, DrawView.yMaxR);
             bottomLeftPt_topVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
             bottomLeftPt_RightVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
@@ -342,7 +362,7 @@ public class DrawView extends View {
             bottomLeftPt_RightVertex = null;
         }
 
-        if (DrawView.currentVerticesTobeShown == 4) {
+        if (DrawView.currentVerticesTobeShown == PotHole.BOTTOM_RIGHT) {
             PointF bottomRightPt = new PointF(DrawView.xMaxR, DrawView.yMaxR);
             bottomRightPt_topVertex = this.getVertexPoint(this.sunPt, bottomRightPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
             bottomRightPt_leftVertex = this.getVertexPoint(this.sunPt, bottomRightPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
@@ -351,7 +371,7 @@ public class DrawView extends View {
             bottomRightPt_leftVertex = null;
         }
 
-        if (DrawView.currentVerticesTobeShown == 5) {
+        if (DrawView.currentVerticesTobeShown == PotHole.TOP_CENTER) {
             PointF topCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMin, DrawView.yMinR);
             topCenterPt_LeftVertex = this.getVertexPoint(this.sunPt, topCenterPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
             topCenterPt_BottomVertex = this.getVertexPoint(this.sunPt, topCenterPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
@@ -362,7 +382,7 @@ public class DrawView extends View {
             topCenterPt_RightVertex = null;
         }
 
-        if (DrawView.currentVerticesTobeShown == 6) {
+        if (DrawView.currentVerticesTobeShown == PotHole.BOTTOM_CENTER) {
             PointF bottomCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMin, DrawView.yMaxR);
             bottomCenterPt_LeftVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
             bottomCenterPt_TopVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
@@ -373,7 +393,7 @@ public class DrawView extends View {
             bottomCenterPt_RightVertex = null;
         }
 
-        if (DrawView.currentVerticesTobeShown == 7) {
+        if (DrawView.currentVerticesTobeShown == PotHole.CENTER) {
             leftVertex = this.getVertexPoint(startXPt, this.sunPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
             rightVertex = this.getVertexPoint(startXPt, this.sunPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
             topVertex = this.getVertexPoint(startXPt, this.sunPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
@@ -502,7 +522,10 @@ public class DrawView extends View {
 
         if (DrawView.multiTapCount == 2) {
             circlePaint.setColor(Color.BLACK); directLinePaint.setColor(Color.BLACK);
-            this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, true, true);
+            if (DrawView.selectedSatelite == PotHole.NONE)
+                this.drawDirectLine(canvas, startXPt,  this.sunPt, directLinePaint, circlePaint, true, true);
+            else
+                this.drawDirectLine(canvas, startXPt,  this.getSateliteCenter(sunPt, DrawView.selectedSatelite), directLinePaint, circlePaint, true, true);
 
             circlePaint.setColor(Color.BLACK);
             directLinePaint.setColor(Color.BLACK);
@@ -513,13 +536,14 @@ public class DrawView extends View {
             this.drawAngel(canvas, startXPt, this.sunPt, this.bottomVertex, directLinePaint, circlePaint);
 
         } else {
-            if (startXPt != null && this.sunPt != null && (DrawView.currentVerticesTobeShown ==  0 || DrawView.currentVerticesTobeShown ==7)) {
+            if (startXPt != null && this.sunPt != null && (DrawView.currentVerticesTobeShown ==  PotHole.NONE || DrawView.currentVerticesTobeShown == PotHole.CENTER)) {
                 circlePaint.setColor(Color.BLACK);
                 directLinePaint.setColor(Color.BLACK);
                 this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, true, true);
             }
         }
         this.drawDirectLinesToPots(canvas);
+        this.defineSatelites(canvas);
 
 
         //draw table borders
@@ -531,35 +555,35 @@ public class DrawView extends View {
     private void drawDirectLinesToPots(Canvas canvas) {
 
         if (this.sunPt != null) {
-            PointF topLeftPt = new PointF(DrawView.xMinR, DrawView.yMinR);
+            topLeftPt = new PointF(DrawView.xMinR, DrawView.yMinR);
             circlePaint.setColor(Color.RED);
             directLinePaint.setColor(Color.RED);
             this.drawDirectLine(canvas, this.sunPt, topLeftPt, directLinePaint, circlePaint, true, true);
             this.drawAngel(canvas, this.sunPt, topLeftPt, this.topLeftPt_rightVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topLeftPt, this.topLeftPt_bottomVertex, directLinePaint, circlePaint);
 
-            PointF topRightPt = new PointF(DrawView.xMaxR, DrawView.yMinR);
+            topRightPt = new PointF(DrawView.xMaxR, DrawView.yMinR);
             circlePaint.setColor(Color.BLUE);
             directLinePaint.setColor(Color.BLUE);
             this.drawDirectLine(canvas, this.sunPt, topRightPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, topRightPt, this.topRightPt_bottomVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topRightPt, this.topRightPt_leftVertex, directLinePaint, circlePaint);
 
-            PointF bottomRightPt = new PointF(DrawView.xMaxR, DrawView.yMaxR);
+            bottomRightPt = new PointF(DrawView.xMaxR, DrawView.yMaxR);
             circlePaint.setColor(Color.rgb(25, 25, 112));
             directLinePaint.setColor(Color.rgb(25, 25, 112)); //dark green
             this.drawDirectLine(canvas, this.sunPt, bottomRightPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, bottomRightPt, this.bottomRightPt_topVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, bottomRightPt, this.bottomRightPt_leftVertex, directLinePaint, circlePaint);
 
-            PointF bottomLeftPt = new PointF(DrawView.xMinR, DrawView.yMaxR);
+            bottomLeftPt = new PointF(DrawView.xMinR, DrawView.yMaxR);
             circlePaint.setColor(Color.rgb(139, 69, 19));
             directLinePaint.setColor(Color.rgb(139, 69, 19)); //saddle brown
             this.drawDirectLine(canvas, this.sunPt, bottomLeftPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, bottomLeftPt, this.bottomLeftPt_topVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, bottomLeftPt, this.bottomLeftPt_RightVertex, directLinePaint, circlePaint);
 
-            PointF topCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMinR, DrawView.yMin); //purposely kept yMin instead of yMinR, otherwise ball target will be outside the pocket not pocket
+            topCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMinR, DrawView.yMin); //purposely kept yMin instead of yMinR, otherwise ball target will be outside the pocket not pocket
             circlePaint.setColor(Color.rgb(255, 140, 0));
             directLinePaint.setColor(Color.rgb(255, 140, 0)); //dark orange
             this.drawDirectLine(canvas, this.sunPt, topCenterPt, directLinePaint, circlePaint, false, true);
@@ -567,7 +591,7 @@ public class DrawView extends View {
             this.drawAngel(canvas, this.sunPt, topCenterPt, this.topCenterPt_BottomVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topCenterPt, this.topCenterPt_RightVertex, directLinePaint, circlePaint);
 
-            PointF bottomCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMinR, DrawView.yMax); //purposely kept yMax instead of yMaxR, otherwise ball target will be outside the pocket not pocket
+            bottomCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMinR, DrawView.yMax); //purposely kept yMax instead of yMaxR, otherwise ball target will be outside the pocket not pocket
             circlePaint.setColor(Color.BLUE);
             directLinePaint.setColor(Color.BLUE);
             this.drawDirectLine(canvas, this.sunPt, bottomCenterPt, directLinePaint, circlePaint, false, true);
@@ -589,14 +613,6 @@ public class DrawView extends View {
 
     }
 
-    private void thisInvalidate(){
-        this.invalidate();
-    }
-
-    private void printToast(String msg) {
-        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
-    }
-
     private void drawAngel(Canvas canvas, PointF sunPt, PointF targetPt, PointF vertexPt, Paint linePaint, Paint circlePaint){
 
         if (vertexPt != null && sunPt != null && targetPt != null) {
@@ -605,63 +621,131 @@ public class DrawView extends View {
         }
     }
 
-    private void getNearestPocket(MotionEvent event) {
-        int returnValue = 0;
-        RectF rect = new RectF(DrawView.xMin, DrawView.yMin, DrawView.xMax, DrawView.yMax);
-        
-        if (!rect.contains(event.getX(), event.getY())) {
-            double topLeftD = Math.abs(Math.hypot(event.getX() - DrawView.xMin, event.getY() - DrawView.yMin));
-            double topRightD = Math.abs(Math.hypot(event.getX() - DrawView.xMax, event.getY() - DrawView.yMin));
-            double bottomLeftD = Math.abs(Math.hypot(event.getX() - DrawView.xMin, event.getY() - DrawView.yMax));
-            double bottomRightD = Math.abs(Math.hypot(event.getX() - DrawView.xMax, event.getY() - DrawView.yMax));
+    private void defineSatelites(Canvas canvas) {
+        if (this.sunPt != null) {
+            drawSingleSatelite(new CustomPointF(topLeftPt), new CustomPointF(sunPt), canvas);
+            drawSingleSatelite(new CustomPointF(topRightPt), new CustomPointF(sunPt), canvas);
+            drawSingleSatelite(new CustomPointF(bottomLeftPt), new CustomPointF(sunPt), canvas);
+            drawSingleSatelite(new CustomPointF(bottomRightPt), new CustomPointF(sunPt), canvas);
+            drawSingleSatelite(new CustomPointF(topCenterPt), new CustomPointF(sunPt), canvas);
+            drawSingleSatelite(new CustomPointF(bottomCenterPt), new CustomPointF(sunPt), canvas);
+        }
+    }
 
-            double topCenterD = Math.abs(Math.hypot(event.getX() - (DrawView.xMax - DrawView.xMin)/2 + DrawView.xMin, event.getY() - DrawView.yMin));
-            double bottomCenterD = Math.abs(Math.hypot(event.getX() - (DrawView.xMax - DrawView.xMin)/2 + DrawView.xMin, event.getY() - DrawView.yMax));
+    private void drawSingleSatelite(CustomPointF potHoleCenter, CustomPointF sunPt, Canvas canvas) {
 
-            double minD = topLeftD;
-            returnValue = 1;
-            if (Double.compare(minD, topRightD) > 0) {
-                minD = topRightD;
-                returnValue = 2;
-            }
+        if (potHoleCenter != null && sunPt != null){
 
-            if (Double.compare(minD, bottomLeftD) > 0) {
-                returnValue = 3;
-                minD = bottomLeftD;
-            }
+            CustomPointF satelitePoint = this.getSateliteCenter(potHoleCenter, sunPt);
 
-            if (Double.compare(minD, bottomRightD) > 0) {
-                returnValue = 4;
-                minD = bottomRightD;
-            }
-
-            if (Double.compare(minD, topCenterD) > 0) {
-                returnValue = 5;
-                minD = topCenterD;
-            }
-
-            if (Double.compare(minD, bottomCenterD) > 0)
-                returnValue = 6;
-
+            Paint sateListPaint = new Paint();
+            sateListPaint.setColor(Color.RED);
+            sateListPaint.setStrokeWidth(3);
+            sateListPaint.setStyle(Paint.Style.STROKE);
+            //        canvas.drawCircle(satelitePoint.getX(), satelitePoint.getY(), DrawView.rBall, sateListPaint);
+            canvas.drawLine(satelitePoint.getX(), satelitePoint.getY(), sunPt.getX(), sunPt.getY(), sateListPaint);
+            //center dot
+            canvas.drawCircle(satelitePoint.getX(), satelitePoint.getY(), 4, sateListPaint);
         }
 
-        if (returnValue > 0)
-            multiTapCount = 1;
+    }
 
-        DrawView.currentVerticesTobeShown = returnValue;
-//        DrawView.currentVerticesTobeShown = 7;
+    private CustomPointF getSateliteCenter(CustomPointF potHoleCenter, CustomPointF sunPt) {
+        float len = (float) Math.sqrt(((sunPt.getX()-potHoleCenter.getX()) * (sunPt.getX()-potHoleCenter.getX()))
+                + ((sunPt.getY() - potHoleCenter.getY())*(sunPt.getY() - potHoleCenter.getY())));
+
+        float dx = (sunPt.getX()-potHoleCenter.getX()) / len;
+        float dy = (sunPt.getY()-potHoleCenter.getY()) / len;
+
+        CustomPointF satelitePoint = new CustomPointF(sunPt.getX() + (DrawView.rBall * dx * 2), sunPt.getY() + (DrawView.rBall * dy * 2));
+        return satelitePoint;
+    }
+
+    private CustomPointF getSateliteCenter(CustomPointF sunPt, PotHole potHole) {
+        CustomPointF potHoleCenter;
+        switch (potHole) {
+            case TOP_LEFT:
+                potHoleCenter = new CustomPointF(topLeftPt);
+                break;
+            case TOP_RIGHT:
+                potHoleCenter = new CustomPointF(topRightPt);
+                break;
+            case BOTTOM_LEFT:
+                potHoleCenter = new CustomPointF(bottomLeftPt);
+                break;
+            case BOTTOM_RIGHT:
+                potHoleCenter = new CustomPointF(bottomRightPt);
+                break;
+            case TOP_CENTER:
+                potHoleCenter = new CustomPointF(topCenterPt);
+                break;
+            case BOTTOM_CENTER:
+                potHoleCenter = new CustomPointF(bottomCenterPt);
+                break;
+            default:
+                potHoleCenter = null;
+                break;
+        }
+        CustomPointF satelitePoint = this.getSateliteCenter(potHoleCenter, sunPt);
+        return satelitePoint;
+    }
+
+    private boolean isInsideRect(MotionEvent event) {
+        RectF rect = new RectF(DrawView.xMin, DrawView.yMin, DrawView.xMax, DrawView.yMax);
+
+        return rect.contains(event.getX(), event.getY());
+    }
+
+
+    private PotHole getNearestPocket(MotionEvent event) {
+        PotHole returnValue = PotHole.NONE;
+
+        double topLeftD = Math.abs(Math.hypot(event.getX() - DrawView.xMin, event.getY() - DrawView.yMin));
+        double topRightD = Math.abs(Math.hypot(event.getX() - DrawView.xMax, event.getY() - DrawView.yMin));
+        double bottomLeftD = Math.abs(Math.hypot(event.getX() - DrawView.xMin, event.getY() - DrawView.yMax));
+        double bottomRightD = Math.abs(Math.hypot(event.getX() - DrawView.xMax, event.getY() - DrawView.yMax));
+
+        double topCenterD = Math.abs(Math.hypot(event.getX() - (DrawView.xMax - DrawView.xMin)/2 + DrawView.xMin, event.getY() - DrawView.yMin));
+        double bottomCenterD = Math.abs(Math.hypot(event.getX() - (DrawView.xMax - DrawView.xMin)/2 + DrawView.xMin, event.getY() - DrawView.yMax));
+
+        double minD = topLeftD;
+        returnValue = PotHole.TOP_LEFT;
+        if (Double.compare(minD, topRightD) > 0) {
+            minD = topRightD;
+            returnValue = PotHole.TOP_RIGHT;
+        }
+
+        if (Double.compare(minD, bottomLeftD) > 0) {
+            returnValue = PotHole.BOTTOM_LEFT;
+            minD = bottomLeftD;
+        }
+
+        if (Double.compare(minD, bottomRightD) > 0) {
+            returnValue = PotHole.BOTTOM_RIGHT;
+            minD = bottomRightD;
+        }
+
+        if (Double.compare(minD, topCenterD) > 0) {
+            returnValue = PotHole.TOP_CENTER;
+            minD = topCenterD;
+        }
+
+        if (Double.compare(minD, bottomCenterD) > 0)
+            returnValue = PotHole.BOTTOM_CENTER;
+
+        return returnValue;
     }
 
     public void setStartToEndVertices(){
-        DrawView.currentVerticesTobeShown = 7;
+        DrawView.currentVerticesTobeShown = PotHole.CENTER;
         this.setAllVertexPoints();
         invalidate();
     }
 
     public void printLogs(){
-        Log.i(Utilities.APP_NAME, "StartPoint: " + startXPt.printCords());
-        Log.i(Utilities.APP_NAME, "SunPoint: " + sunPt.printCords());
-        Log.i(Utilities.APP_NAME, "EndPoint: " + endXPt.printCords());
+        Log.i(CacheClass.APP_NAME, "StartPoint: " + startXPt.printCords());
+        Log.i(CacheClass.APP_NAME, "SunPoint: " + sunPt.printCords());
+        Log.i(CacheClass.APP_NAME, "EndPoint: " + endXPt.printCords());
     }
 
     public void toggleDeviationReflection() {
@@ -669,4 +753,13 @@ public class DrawView extends View {
         this.setAllVertexPoints();
         this.invalidate();
     }
+
+    private void thisInvalidate(){
+        this.invalidate();
+    }
+
+    private void printToast(String msg) {
+        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+    }
+
 }

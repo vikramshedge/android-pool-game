@@ -1,10 +1,11 @@
-package com.vshedge.poolgamehelper;
+package com.vshedge.poolgamehelper.utilities;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 
-public class Utilities {
+import com.vshedge.poolgamehelper.DrawView;
+
+public class CacheClass {
 
     private static final String BALL_POOL_COORDS = "INIT_COORDS_LEVEL_1";
     private static final String GAMEZY_COORDS = "INIT_COORDS_LEVEL_2";
@@ -19,7 +20,7 @@ public class Utilities {
     public static float rBall = 0;
 
     public static void retrievePrevPrefValues(Context context, int choice){
-        SharedPreferences myPrefs = context.getSharedPreferences(choice == 1 ? Utilities.BALL_POOL_COORDS : Utilities.GAMEZY_COORDS, Context.MODE_PRIVATE);
+        SharedPreferences myPrefs = context.getSharedPreferences(choice == 1 ? CacheClass.BALL_POOL_COORDS : CacheClass.GAMEZY_COORDS, Context.MODE_PRIVATE);
         xMin = myPrefs.getFloat("xMin", 400.00f);
         yMin = myPrefs.getFloat("yMin", 200.00f);
         xMax = myPrefs.getFloat("xMax", 600.00f);
@@ -31,11 +32,10 @@ public class Utilities {
     }
 
     public static void saveCurrentPrefValues(Context context, int choice) {
-        SharedPreferences myPrefs = context.getSharedPreferences(choice == 1 ? Utilities.BALL_POOL_COORDS : Utilities.GAMEZY_COORDS, Context.MODE_PRIVATE);
+        SharedPreferences myPrefs = context.getSharedPreferences(choice == 1 ? CacheClass.BALL_POOL_COORDS : CacheClass.GAMEZY_COORDS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = myPrefs.edit();
 
         editor = DrawView.saveCurrentState(editor);
         editor.apply();
     }
-
 }

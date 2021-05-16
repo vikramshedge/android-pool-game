@@ -8,6 +8,8 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.view.View;
 
+import com.vshedge.poolgamehelper.utilities.CacheClass;
+
 public class DrawViewMainActivity extends View {
 
     public static PointF startPt;
@@ -19,7 +21,7 @@ public class DrawViewMainActivity extends View {
 
     public DrawViewMainActivity(Context context) {
         super(context);
-        Utilities.retrievePrevPrefValues(getContext(), 1);
+        CacheClass.retrievePrevPrefValues(getContext(), 1);
     }
 
     @Override
@@ -30,7 +32,7 @@ public class DrawViewMainActivity extends View {
         borderPaint.setColor(Color.YELLOW);
         borderPaint.setStyle(Paint.Style.STROKE);
         borderPaint.setStrokeWidth(4);
-        RectF borderRect = new RectF(Utilities.xMin + offsetX, Utilities.yMin + offsetY, Utilities.xMax + offsetX, Utilities.yMax + offsetY);
+        RectF borderRect = new RectF(CacheClass.xMin + offsetX, CacheClass.yMin + offsetY, CacheClass.xMax + offsetX, CacheClass.yMax + offsetY);
         canvas.drawRect(borderRect, borderPaint);
 
         if (startPt != null && endPt != null && vertexPt != null && deviatedEndPt != null) {

@@ -2,7 +2,6 @@ package com.vshedge.poolgamehelper;
 
 import android.app.Activity;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
@@ -12,13 +11,16 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
+
+import com.vshedge.poolgamehelper.utilities.CacheClass;
+import com.vshedge.poolgamehelper.utilities.PotHole;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,8 +29,6 @@ import java.io.IOException;
 import java.util.Date;
 
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.Group;
 
 public class WidgetService extends Service {
 
@@ -199,6 +199,53 @@ public class WidgetService extends Service {
                 saveCurrentStateValues(2);
             }
         });
+
+        Button selectSateliteButton = (Button) stateButtonGroupView.findViewById(R.id.selectSateliteButton);
+        selectSateliteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(CacheClass.APP_NAME, "selectSateliteButton click: " + DrawView.selectedSatelite);
+                switch (DrawView.selectedSatelite) {
+                    case NONE:
+                        DrawView.selectedSatelite = PotHole.TOP_LEFT;
+                        selectSateliteButton.setText("1");
+                        break;
+                    case TOP_LEFT:
+                        DrawView.selectedSatelite = PotHole.TOP_CENTER;
+                        selectSateliteButton.setText("2");
+                        break;
+                    case TOP_CENTER:
+                        DrawView.selectedSatelite = PotHole.TOP_RIGHT;
+                        selectSateliteButton.setText("3");
+                        break;
+                    case TOP_RIGHT:
+                        DrawView.selectedSatelite = PotHole.BOTTOM_RIGHT;
+                        selectSateliteButton.setText("4");
+                        break;
+                    case BOTTOM_RIGHT:
+                        DrawView.selectedSatelite = PotHole.BOTTOM_CENTER;
+                        selectSateliteButton.setText("5");
+                        break;
+                    case BOTTOM_CENTER:
+                        DrawView.selectedSatelite = PotHole.BOTTOM_LEFT;
+                        selectSateliteButton.setText("6");
+                        break;
+                    case BOTTOM_LEFT:
+                        DrawView.selectedSatelite = PotHole.NONE;
+                        selectSateliteButton.setText("0");
+                        break;
+                    case CENTER:
+                        DrawView.selectedSatelite = PotHole.NONE;
+                        selectSateliteButton.setText("0");
+                        break;
+                    default:
+                        DrawView.selectedSatelite = PotHole.NONE;
+                        selectSateliteButton.setText("0");
+                        break;
+                }
+                drawView.invalidate();
+            }
+        });
         windowManager.addView(stateButtonGroupView, saveCurrentStateButtonParams);
         stateButtonGroupView.setVisibility(View.VISIBLE);
 
@@ -207,18 +254,18 @@ public class WidgetService extends Service {
 
     private void loadPrevStateValues(int choice) {
         Toast.makeText(this, "Load state clicked" + (choice == 1 ? "Pool":"Gamezy"), Toast.LENGTH_SHORT).show();
-        Utilities.retrievePrevPrefValues(this, choice);
+        CacheClass.retrievePrevPrefValues(this, choice);
         this.drawView.invalidate();
     }
 
     private void saveCurrentStateValues(int choice) {
         Toast.makeText(this, "Save state is disabled : " + (choice == 1 ? "Pool":"Gamezy"), Toast.LENGTH_SHORT).show();
-//        Utilities.saveCurrentPrefValues(this, choice);
+        CacheClass.saveCurrentPrefValues(this, choice);
         if (choice == 1) {
             this.drawView.setStartToEndVertices();
         } else {
-//            this.drawView.toggleDeviationReflection();
-            this.takeScreenshot(mFloatingView);
+            this.drawView.toggleDeviationReflection();
+//            this.takeScreenshot(mFloatingView);
         }
     }
 

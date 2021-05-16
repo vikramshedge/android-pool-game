@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
         showCanvasButton = (Button) findViewById(R.id.showCanvas);
         drawView = new DrawView(MainActivity.this);
-        drawViewMain = new DrawViewMainActivity(MainActivity.this);
+//        drawViewMain = new DrawViewMainActivity(MainActivity.this);
 
         showCanvasButton.setOnClickListener(new View.OnClickListener() {
             @Override
