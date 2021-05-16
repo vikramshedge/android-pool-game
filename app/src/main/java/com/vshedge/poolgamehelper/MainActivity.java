@@ -2,8 +2,11 @@ package com.vshedge.poolgamehelper;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.Application;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -13,13 +16,17 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.text.format.DateFormat;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -27,7 +34,12 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         launchButton = (Button) findViewById(R.id.launchButton);
 
         getPermission();
+        verifyStoragePermission(this);
 
 
         launchButton.setOnClickListener(new View.OnClickListener() {
@@ -74,11 +87,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 //                setContentView(drawView);
-                setContentView( drawViewMain);
+//                setContentView( drawViewMain);
 //                addNotification();
 //                setCoordValues();
-                setTestLines();
+//                setTestLines();
 
+                takeScreenshot(getWindow().getDecorView().getRootView());
             }
         });
     }
@@ -168,6 +182,67 @@ public class MainActivity extends AppCompatActivity {
                 if (!Settings.canDrawOverlays(MainActivity.this)) ;
                 Toast.makeText(this, "Permission denied by user.", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+
+    private void takeScreenshot(View view1) {
+        Date date = new Date();
+        CharSequence format = DateFormat.format("yy-MM-dd_hh-mm-ss", date);
+
+        String myDirName = "learwithdeeksha";
+        String fileName = "screenshot";
+
+            String dirPath = Environment.getExternalStorageDirectory().toString() + "/" + myDirName;
+            File fileDir = new File(dirPath);
+            if (!fileDir.exists()) {
+                boolean mkdir = fileDir.mkdir();
+            }
+
+            View view = getWindow().getDecorView().getRootView();
+
+            String path = dirPath + "/" + fileName + "-" + format + ".jpeg";
+            Toast.makeText(MainActivity.this, path, Toast.LENGTH_SHORT).show();
+
+            view.setDrawingCacheEnabled(true);
+            Bitmap bitmap = Bitmap.createBitmap(view.getDrawingCache());
+            view.setDrawingCacheEnabled(false);
+
+            File imageFile = new File(path);
+            Toast.makeText(MainActivity.this, imageFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(imageFile);
+            int quality = 100;
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fileOutputStream);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+
+//            Intent intent = new Intent(Intent.ACTION_VIEW);
+//            Uri uri = Uri.fromFile(imageFile);
+//            intent.setDataAndType(uri,"image/jpeg");
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            this.startActivity(intent);
+
+//            return imageFile;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private  static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private  static String[] PERMISSION_STOARAGE = {
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+    };
+
+    public static void verifyStoragePermission(Activity activity) {
+        int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(activity, PERMISSION_STOARAGE, REQUEST_EXTERNAL_STORAGE);
         }
     }
 }

@@ -2,11 +2,14 @@ package com.vshedge.poolgamehelper;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 public class Utilities {
 
     private static final String BALL_POOL_COORDS = "INIT_COORDS_LEVEL_1";
     private static final String GAMEZY_COORDS = "INIT_COORDS_LEVEL_2";
+
+    public static final String APP_NAME = "PGH";
 
     public static float xMin = 0;
     public static float yMin = 0;
@@ -34,4 +37,5 @@ public class Utilities {
         editor = DrawView.saveCurrentState(editor);
         editor.apply();
     }
+
 }
