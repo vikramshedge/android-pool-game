@@ -11,6 +11,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.shapes.OvalShape;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
@@ -26,7 +27,9 @@ public class DrawView extends View {
     Paint circlePaint = new Paint();
     Paint borderPaint = new Paint();
 
-    private static float startX1 = 0, startY1 = 0, endX1 = 300, endY1 = 300, rBall = 24;
+    private static float rBall = 24;
+    public static CustomPointF startXPt = new CustomPointF(0, 0);
+    public static CustomPointF endXPt = new CustomPointF(300, 300);
 
     private static int tapCount = 0, multiTapCount = 1;
     private static float xMin = 200, yMin = 200, xMax = 600, yMax = 900, rXY = 0;
@@ -37,7 +40,8 @@ public class DrawView extends View {
 
     public static PointF vertF, sunPtDummy, targetPt;
 
-    private PointF topLeftPt_rightVertex, sunPt;
+    private CustomPointF sunPt;
+    private PointF topLeftPt_rightVertex;
     private PointF topLeftPt_bottomVertex;
     private PointF topRightPt_bottomVertex;
     private PointF topRightPt_leftVertex;
@@ -56,20 +60,12 @@ public class DrawView extends View {
     private PointF rightVertex;
     private PointF bottomVertex;
 
+    private static boolean IS_DEVIATED_REFLECTION = false;
     public static int currentVerticesTobeShown = 0;
 
     public DrawView(Context context) {
         super(context);
         this.customInit();
-    }
-
-    public DrawView(Context context, float startX1, float startY1, float endX1, float endY1) {
-        super(context);
-        this.customInit();
-        DrawView.startX1 = startX1;
-        DrawView.startY1 = startY1;
-        DrawView.endX1 = endX1;
-        DrawView.endY1 = endY1;
     }
 
     public static void loadPrevState(float xMin, float yMin, float xMax, float yMax, float rXY, float rBall) {
@@ -169,11 +165,11 @@ public class DrawView extends View {
                             float currentTouchY = event.getY();
 
                             PointF touchedPoint = new PointF(currentTouchX, currentTouchY);
-                            PointF startPt = new PointF(startX1, startY1);
-                            PointF endPt = new PointF(endX1, endY1);
+                            PointF startPt = startXPt;
+                            PointF endPt = endXPt;
 
-                            double firstDistance = Math.hypot(startX1 - currentTouchX, startY1 - currentTouchY);
-                            double secondDistance = Math.hypot(endX1 - currentTouchX, endY1 - currentTouchY);
+                            double firstDistance = Math.hypot(startXPt.getX() - currentTouchX, startXPt.getY() - currentTouchY);
+                            double secondDistance = Math.hypot(endXPt.getX() - currentTouchX, endXPt.getY() - currentTouchY);
 
                             float dx = (currentTouchX - initialTouchX)/5.0f;
                             float dy = (currentTouchY - initialTouchY)/5.0f;
@@ -200,22 +196,22 @@ public class DrawView extends View {
                             } else {
                                 if (multiTapCount == 1) {
                                     //only start point move
-                                    startX1 = dx + startX1;
-                                    startY1 = dy + startY1;
+                                    startXPt = new CustomPointF(dx + startXPt.getX(), dy + startXPt.getY());
 //                                    if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7)
-                                        sunPt = new PointF(startX1, startY1);
+                                        sunPt = startXPt.duplicate();
+                                    printLogs();
+
                                 } else if (multiTapCount == 2) {
                                     //move both start and end point
                                     if (Double.compare(firstDistance, secondDistance) < 0) {
                                         //move first i.e. starting point
-                                        startX1 = dx + startX1;
-                                        startY1 = dy + startY1;
+                                        startXPt = new CustomPointF(dx + startXPt.getX(), dy + startXPt.getY());
                                     } else {
                                         //move second i.e. ending point
-                                        endX1 = dx + endX1;
-                                        endY1 = dy + endY1;
+                                        endXPt = new CustomPointF(dx + endXPt.getX(), dy + endXPt.getY());
                                     }
-                                    sunPt = new PointF(endX1, endY1);
+                                    sunPt = endXPt.duplicate();
+                                    printLogs();
                                 } else if (multiTapCount == 3) {
                                     // set ball radius
                                     DrawView.rBall = dy + DrawView.rBall;
@@ -280,12 +276,12 @@ public class DrawView extends View {
             // border rect already drawn, proceed with fun of lines
             this.getNearestPocket(event);
             if (DrawView.multiTapCount == 2) {
-                DrawView.endX1 = event.getX();
-                DrawView.endY1 = event.getY();
+                endXPt = new CustomPointF(event.getX(), event.getY());
+                printLogs();
             } else {
                 if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7) {
-                    DrawView.startX1 = event.getX();
-                    DrawView.startY1 = event.getY();
+                    startXPt = new CustomPointF(event.getX(), event.getY());
+                    printLogs();
 //                } else {
 //                    this.setAllVertexPoints();
                 }
@@ -300,7 +296,7 @@ public class DrawView extends View {
 
     private void setStatics(PointF targetPt){
         DrawView.vertF = this.topLeftPt_rightVertex;
-        DrawView.targetPt = new PointF(DrawView.startX1, DrawView.startY1);
+        DrawView.targetPt = startXPt;
         DrawView.sunPtDummy = sunPt;
 //        xMinr: 366.50003, yminr:275.29996 ,ymaxr: 966.9, xMaxRr: 1788.8997;
 //        sunPtX: 616.0, y:953.0
@@ -310,16 +306,19 @@ public class DrawView extends View {
 
     private void setAllVertexPoints() {
         if (DrawView.multiTapCount == 2) {
-            this.sunPt = new PointF(DrawView.endX1, DrawView.endY1);
+            this.sunPt = endXPt.duplicate();
+            printLogs();
         } else {
-            if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7)
-                this.sunPt = new PointF(DrawView.startX1, DrawView.startY1);
+            if (DrawView.currentVerticesTobeShown == 0 || DrawView.currentVerticesTobeShown == 7) {
+                this.sunPt = startXPt.duplicate();
+                printLogs();
+            }
         }
 
         if (DrawView.currentVerticesTobeShown == 1) {
             PointF topLeftPt = new PointF(DrawView.xMinR, DrawView.yMinR);
-            topLeftPt_rightVertex = this.getVertexPoint(this.sunPt, topLeftPt, false, DrawView.xMaxR);
-            topLeftPt_bottomVertex = this.getVertexPoint(this.sunPt, topLeftPt, true, DrawView.yMaxR);
+            topLeftPt_rightVertex = this.getVertexPoint(this.sunPt, topLeftPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
+            topLeftPt_bottomVertex = this.getVertexPoint(this.sunPt, topLeftPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
         } else {
             topLeftPt_rightVertex = null;
             topLeftPt_bottomVertex = null;
@@ -327,8 +326,8 @@ public class DrawView extends View {
 
         if (DrawView.currentVerticesTobeShown == 2) {
             PointF topRightPt = new PointF(DrawView.xMaxR, DrawView.yMinR);
-            topRightPt_bottomVertex = this.getVertexPoint(this.sunPt, topRightPt, true, DrawView.yMaxR);
-            topRightPt_leftVertex = this.getVertexPoint(this.sunPt, topRightPt, false, DrawView.xMinR);
+            topRightPt_bottomVertex = this.getVertexPoint(this.sunPt, topRightPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
+            topRightPt_leftVertex = this.getVertexPoint(this.sunPt, topRightPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
         } else {
             topRightPt_bottomVertex = null;
             topRightPt_leftVertex = null;
@@ -336,8 +335,8 @@ public class DrawView extends View {
 
         if (DrawView.currentVerticesTobeShown == 3) {
             PointF bottomLeftPt = new PointF(DrawView.xMinR, DrawView.yMaxR);
-            bottomLeftPt_topVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, true, DrawView.yMinR);
-            bottomLeftPt_RightVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, false, DrawView.xMaxR);
+            bottomLeftPt_topVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
+            bottomLeftPt_RightVertex = this.getVertexPoint(this.sunPt, bottomLeftPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
         } else {
             bottomLeftPt_topVertex = null;
             bottomLeftPt_RightVertex = null;
@@ -345,8 +344,8 @@ public class DrawView extends View {
 
         if (DrawView.currentVerticesTobeShown == 4) {
             PointF bottomRightPt = new PointF(DrawView.xMaxR, DrawView.yMaxR);
-            bottomRightPt_topVertex = this.getVertexPoint(this.sunPt, bottomRightPt, false, DrawView.xMinR);
-            bottomRightPt_leftVertex = this.getVertexPoint(this.sunPt, bottomRightPt, true, DrawView.yMinR);
+            bottomRightPt_topVertex = this.getVertexPoint(this.sunPt, bottomRightPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
+            bottomRightPt_leftVertex = this.getVertexPoint(this.sunPt, bottomRightPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
         } else {
             bottomRightPt_topVertex = null;
             bottomRightPt_leftVertex = null;
@@ -354,9 +353,9 @@ public class DrawView extends View {
 
         if (DrawView.currentVerticesTobeShown == 5) {
             PointF topCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMin, DrawView.yMinR);
-            topCenterPt_LeftVertex = this.getVertexPoint(this.sunPt, topCenterPt, false, DrawView.xMinR);
-            topCenterPt_BottomVertex = this.getVertexPoint(this.sunPt, topCenterPt, true, DrawView.yMaxR);
-            topCenterPt_RightVertex = this.getVertexPoint(this.sunPt, topCenterPt, false, DrawView.xMaxR);
+            topCenterPt_LeftVertex = this.getVertexPoint(this.sunPt, topCenterPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
+            topCenterPt_BottomVertex = this.getVertexPoint(this.sunPt, topCenterPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
+            topCenterPt_RightVertex = this.getVertexPoint(this.sunPt, topCenterPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
         } else {
             topCenterPt_LeftVertex = null;
             topCenterPt_BottomVertex = null;
@@ -365,9 +364,9 @@ public class DrawView extends View {
 
         if (DrawView.currentVerticesTobeShown == 6) {
             PointF bottomCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMin, DrawView.yMaxR);
-            bottomCenterPt_LeftVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, false, DrawView.xMaxR);
-            bottomCenterPt_TopVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, false, DrawView.xMinR);
-            bottomCenterPt_RightVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, true, DrawView.yMinR);
+            bottomCenterPt_LeftVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
+            bottomCenterPt_TopVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
+            bottomCenterPt_RightVertex = this.getVertexPoint(this.sunPt, bottomCenterPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
         } else {
             bottomCenterPt_LeftVertex = null;
             bottomCenterPt_TopVertex = null;
@@ -375,11 +374,10 @@ public class DrawView extends View {
         }
 
         if (DrawView.currentVerticesTobeShown == 7) {
-            PointF startPt = new PointF(DrawView.startX1, DrawView.startY1);
-            leftVertex = this.getVertexPoint(startPt, this.sunPt, false, DrawView.xMinR);
-            rightVertex = this.getVertexPoint(startPt, this.sunPt, false, DrawView.xMaxR);
-            topVertex = this.getVertexPoint(startPt, this.sunPt, true, DrawView.yMinR);
-            bottomVertex = this.getVertexPoint(startPt, this.sunPt, true, DrawView.yMaxR);
+            leftVertex = this.getVertexPoint(startXPt, this.sunPt, false, DrawView.xMinR, IS_DEVIATED_REFLECTION);
+            rightVertex = this.getVertexPoint(startXPt, this.sunPt, false, DrawView.xMaxR, IS_DEVIATED_REFLECTION);
+            topVertex = this.getVertexPoint(startXPt, this.sunPt, true, DrawView.yMinR, IS_DEVIATED_REFLECTION);
+            bottomVertex = this.getVertexPoint(startXPt, this.sunPt, true, DrawView.yMaxR, IS_DEVIATED_REFLECTION);
         } else {
             leftVertex = null;
             rightVertex = null;
@@ -389,7 +387,7 @@ public class DrawView extends View {
         }
     }
 
-    private PointF getVertexPoint(PointF pt1, PointF pt2, boolean isHorizontal, float vertexDimVar){
+    private PointF getVertexPoint(PointF pt1, PointF pt2, boolean isHorizontal, float vertexDimVar, boolean isDeviation){
 
         float dxLoopCounter = 10.0f;
         boolean isStartPointLowerBound;
@@ -425,7 +423,7 @@ public class DrawView extends View {
 
         PointF vertexPoint;
         this.iterationCount = 0;
-        vertexPoint = this.getVertexRecursion(lowerBound, upperBound, isHorizontal, vertexDimVar, startPt, endPt, dxLoopCounter, isStartPointLowerBound); // vertexDimVar is yMin for topEdge
+        vertexPoint = this.getVertexRecursion(lowerBound, upperBound, isHorizontal, vertexDimVar, startPt, endPt, dxLoopCounter, isStartPointLowerBound, isDeviation); // vertexDimVar is yMin for topEdge
 //        vertexPoint = new PointF(vertexDimVar, (yMaxR - yMinR)/2 + yMinR);
 //        Toast.makeText(getContext(), "Iteration count: " + iterationCount, Toast.LENGTH_SHORT).show();
         if (vertexPoint != null) {
@@ -439,7 +437,7 @@ public class DrawView extends View {
         return vertexPoint;
     }
 
-    private PointF getVertexRecursion(float i, float upperBound, boolean isHorizontal, float vertexDimVar, PointF startPt, PointF endPt, float dxLooVar, boolean isStartPointLowerBond ) {
+    private PointF getVertexRecursion(float i, float upperBound, boolean isHorizontal, float vertexDimVar, PointF startPt, PointF endPt, float dxLooVar, boolean isStartPointLowerBond, boolean isDeviation) {
 
         while ( i < upperBound) {
             PointF vertexPt = isHorizontal ? new PointF(i, vertexDimVar) : new PointF(vertexDimVar, i); // vertexDimVar is yMinR for topEdge
@@ -452,17 +450,16 @@ public class DrawView extends View {
                 rightAngle = this.angle(vertexPt, endPt, new PointF(endPt.x, i));
             }
 
-//            int diff = Double.compare(leftAngle, rightAngle);
             double angleRatio = Math.abs(leftAngle/rightAngle);
-            double angleDeviation = isStartPointLowerBond ? 0.591711719678775 : 1.690012157512910;
-            int diff = Double.compare(angleRatio, angleDeviation);
+            double angleDeviation = isStartPointLowerBond ? 0.6666666666666666666666666666 : 1.3333333333333333333333;
+            int diff = isDeviation ? Double.compare(angleRatio, angleDeviation) :  Double.compare(leftAngle, rightAngle);
             if (diff == 0) {
                 return vertexPt;
             } else if ( diff > 0) {
-                if (Math.abs(dxLooVar) < 0.001) {
+                if (Math.abs(dxLooVar) < 0.0001) {
                     return vertexPt;
                 } else {
-                    return this.getVertexRecursion(i, upperBound, isHorizontal, vertexDimVar, startPt, endPt, -dxLooVar/10.0f, isStartPointLowerBond);
+                    return this.getVertexRecursion(i, upperBound, isHorizontal, vertexDimVar, startPt, endPt, -dxLooVar/10.0f, isStartPointLowerBond, isDeviation);
                 }
             }
             iterationCount++;
@@ -503,24 +500,23 @@ public class DrawView extends View {
         DrawView.xMaxR = DrawView.xMax - DrawView.rBall;
         DrawView.yMaxR = DrawView.yMax - DrawView.rBall;
 
-        PointF startPt = new PointF(DrawView.startX1, DrawView.startY1);
         if (DrawView.multiTapCount == 2) {
             circlePaint.setColor(Color.BLACK); directLinePaint.setColor(Color.BLACK);
-            this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, true, true);
+            this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, true, true);
 
             circlePaint.setColor(Color.BLACK);
             directLinePaint.setColor(Color.BLACK);
-            this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, false, true);
-            this.drawAngel(canvas, startPt, this.sunPt, this.leftVertex, directLinePaint, circlePaint);
-            this.drawAngel(canvas, startPt, this.sunPt, this.topVertex, directLinePaint, circlePaint);
-            this.drawAngel(canvas, startPt, this.sunPt, this.rightVertex, directLinePaint, circlePaint);
-            this.drawAngel(canvas, startPt, this.sunPt, this.bottomVertex, directLinePaint, circlePaint);
+            this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, false, true);
+            this.drawAngel(canvas, startXPt, this.sunPt, this.leftVertex, directLinePaint, circlePaint);
+            this.drawAngel(canvas, startXPt, this.sunPt, this.topVertex, directLinePaint, circlePaint);
+            this.drawAngel(canvas, startXPt, this.sunPt, this.rightVertex, directLinePaint, circlePaint);
+            this.drawAngel(canvas, startXPt, this.sunPt, this.bottomVertex, directLinePaint, circlePaint);
 
         } else {
-            if (startPt != null && this.sunPt != null && (DrawView.currentVerticesTobeShown ==  0 || DrawView.currentVerticesTobeShown ==7)) {
+            if (startXPt != null && this.sunPt != null && (DrawView.currentVerticesTobeShown ==  0 || DrawView.currentVerticesTobeShown ==7)) {
                 circlePaint.setColor(Color.BLACK);
                 directLinePaint.setColor(Color.BLACK);
-                this.drawDirectLine(canvas, startPt, this.sunPt, directLinePaint, circlePaint, true, true);
+                this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, true, true);
             }
         }
         this.drawDirectLinesToPots(canvas);
@@ -660,5 +656,17 @@ public class DrawView extends View {
         DrawView.currentVerticesTobeShown = 7;
         this.setAllVertexPoints();
         invalidate();
+    }
+
+    public void printLogs(){
+        Log.i(Utilities.APP_NAME, "StartPoint: " + startXPt.printCords());
+        Log.i(Utilities.APP_NAME, "SunPoint: " + sunPt.printCords());
+        Log.i(Utilities.APP_NAME, "EndPoint: " + endXPt.printCords());
+    }
+
+    public void toggleDeviationReflection() {
+        DrawView.IS_DEVIATED_REFLECTION = ! DrawView.IS_DEVIATED_REFLECTION;
+        this.setAllVertexPoints();
+        this.invalidate();
     }
 }

@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.text.format.DateFormat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +19,12 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Date;
 
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -150,7 +159,7 @@ public class WidgetService extends Service {
         height = windowManager.getDefaultDisplay().getHeight();
         width = windowManager.getDefaultDisplay().getWidth();
 
-        drawView = new DrawView(this, width/4, height/4, 3*width/4, 3*height/4);
+        drawView = new DrawView(this);
 
         windowManager.addView(mFloatingView,layoutParams);
         mFloatingView.setVisibility(View.VISIBLE);
@@ -207,6 +216,9 @@ public class WidgetService extends Service {
 //        Utilities.saveCurrentPrefValues(this, choice);
         if (choice == 1) {
             this.drawView.setStartToEndVertices();
+        } else {
+//            this.drawView.toggleDeviationReflection();
+            this.takeScreenshot(mFloatingView);
         }
     }
 
@@ -285,5 +297,51 @@ public class WidgetService extends Service {
     //callbacks interface for communication with service clients!
     public interface Callbacks{
         public void updateClient(long data);
+    }
+
+    private void takeScreenshot(View view) {
+        Date date = new Date();
+        CharSequence format = DateFormat.format("yy-MM-dd_hh-mm-ss", date);
+
+        String myDirName = "learwithdeeksha";
+        String fileName = "screenshot";
+
+        String dirPath = Environment.getExternalStorageDirectory().toString() + "/" + myDirName;
+        File fileDir = new File(dirPath);
+        if (!fileDir.exists()) {
+            boolean mkdir = fileDir.mkdir();
+        }
+
+//        view = view.getRootView();
+
+        String path = dirPath + "/" + fileName + "-" + format + ".jpeg";
+        Toast.makeText(this, path, Toast.LENGTH_SHORT).show();
+
+        view.setDrawingCacheEnabled(true);
+        Bitmap bitmap = Bitmap.createBitmap(view.getDrawingCache());
+        view.setDrawingCacheEnabled(false);
+
+        File imageFile = new File(path);
+        Toast.makeText(this, imageFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(imageFile);
+            int quality = 100;
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fileOutputStream);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+
+//            Intent intent = new Intent(Intent.ACTION_VIEW);
+//            Uri uri = Uri.fromFile(imageFile);
+//            intent.setDataAndType(uri,"image/jpeg");
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            this.startActivity(intent);
+
+//            return imageFile;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
