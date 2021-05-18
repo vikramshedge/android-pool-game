@@ -28,6 +28,7 @@ public class DrawView extends View {
     Paint borderPaint = new Paint();
 
     private static float rBall = 24;
+    private static float rDot = 3;
     public static CustomPointF startXPt = new CustomPointF(0, 0);
     public static CustomPointF endXPt = new CustomPointF(300, 300);
 
@@ -227,7 +228,7 @@ public class DrawView extends View {
                                 } else if (multiTapCount == 3) {
                                     // set ball radius
                                     // commenting out, this has to be included in the separate menu button with group of dimension settings
-//                                    DrawView.rBall = dy + DrawView.rBall;
+                                    DrawView.rBall = dy + DrawView.rBall;
 //                                    selectedSatelite = getNearestPocket(event);
                                 }
                                 setAllVertexPoints();
@@ -291,6 +292,8 @@ public class DrawView extends View {
             if (!isInsideRect(event)) {
                 DrawView.currentVerticesTobeShown = this.getNearestPocket(event);
                 DrawView.multiTapCount = 1;
+            } else {
+                DrawView.currentVerticesTobeShown = PotHole.NONE;
             }
 
             if (DrawView.multiTapCount == 2) {
@@ -472,6 +475,7 @@ public class DrawView extends View {
 
             double angleRatio = Math.abs(leftAngle/rightAngle);
             double angleDeviation = isStartPointLowerBond ? 0.6666666666666666666666666666 : 1.3333333333333333333333;
+//            double angleDeviation = 0.6666666666666666666666666666;
             int diff = isDeviation ? Double.compare(angleRatio, angleDeviation) :  Double.compare(leftAngle, rightAngle);
             if (diff == 0) {
                 return vertexPt;
@@ -525,11 +529,11 @@ public class DrawView extends View {
             if (DrawView.selectedSatelite == PotHole.NONE)
                 this.drawDirectLine(canvas, startXPt,  this.sunPt, directLinePaint, circlePaint, true, true);
             else
-                this.drawDirectLine(canvas, startXPt,  this.getSateliteCenter(sunPt, DrawView.selectedSatelite), directLinePaint, circlePaint, true, true);
+                this.drawDirectLine(canvas, startXPt,  this.getSateliteCenter(DrawView.selectedSatelite, sunPt), directLinePaint, circlePaint, true, true);
 
             circlePaint.setColor(Color.BLACK);
             directLinePaint.setColor(Color.BLACK);
-            this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, false, true);
+//            this.drawDirectLine(canvas, startXPt, this.sunPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, startXPt, this.sunPt, this.leftVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, startXPt, this.sunPt, this.topVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, startXPt, this.sunPt, this.rightVertex, directLinePaint, circlePaint);
@@ -555,38 +559,58 @@ public class DrawView extends View {
     private void drawDirectLinesToPots(Canvas canvas) {
 
         if (this.sunPt != null) {
+
+            //this is draw sunpoint
+            circlePaint.setColor(Color.RED);
+            drawDirectLine(canvas, sunPt, sunPt, circlePaint, circlePaint, false, true);
+
             topLeftPt = new PointF(DrawView.xMinR, DrawView.yMinR);
             circlePaint.setColor(Color.RED);
             directLinePaint.setColor(Color.RED);
-            this.drawDirectLine(canvas, this.sunPt, topLeftPt, directLinePaint, circlePaint, true, true);
+            CustomPointF deltaCords = this.getLineDeltaCords(new CustomPointF(topLeftPt), sunPt);
+            CustomPointF circleParameterPt = new CustomPointF(sunPt.getX() - (DrawView.rBall * deltaCords.getX()), sunPt.getY() - (DrawView.rBall * deltaCords.getY()));
+//            this.drawDirectLine(canvas, this.sunPt, topLeftPt, directLinePaint, circlePaint, true, true);
+            this.drawDirectLine(canvas, circleParameterPt, topLeftPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, topLeftPt, this.topLeftPt_rightVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topLeftPt, this.topLeftPt_bottomVertex, directLinePaint, circlePaint);
 
             topRightPt = new PointF(DrawView.xMaxR, DrawView.yMinR);
             circlePaint.setColor(Color.BLUE);
             directLinePaint.setColor(Color.BLUE);
-            this.drawDirectLine(canvas, this.sunPt, topRightPt, directLinePaint, circlePaint, false, true);
+//            this.drawDirectLine(canvas, this.sunPt, topRightPt, directLinePaint, circlePaint, false, true);
+            deltaCords = this.getLineDeltaCords(new CustomPointF(topRightPt), sunPt);
+            circleParameterPt = new CustomPointF(sunPt.getX() - (DrawView.rBall * deltaCords.getX()), sunPt.getY() - (DrawView.rBall * deltaCords.getY()));
+            this.drawDirectLine(canvas, circleParameterPt, topRightPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, topRightPt, this.topRightPt_bottomVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topRightPt, this.topRightPt_leftVertex, directLinePaint, circlePaint);
 
             bottomRightPt = new PointF(DrawView.xMaxR, DrawView.yMaxR);
             circlePaint.setColor(Color.rgb(25, 25, 112));
             directLinePaint.setColor(Color.rgb(25, 25, 112)); //dark green
-            this.drawDirectLine(canvas, this.sunPt, bottomRightPt, directLinePaint, circlePaint, false, true);
+            deltaCords = this.getLineDeltaCords(new CustomPointF(bottomRightPt), sunPt);
+            circleParameterPt = new CustomPointF(sunPt.getX() - (DrawView.rBall * deltaCords.getX()), sunPt.getY() - (DrawView.rBall * deltaCords.getY()));
+            this.drawDirectLine(canvas, circleParameterPt, bottomRightPt, directLinePaint, circlePaint, false, true);
+            //this.drawDirectLine(canvas, this.sunPt, bottomRightPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, bottomRightPt, this.bottomRightPt_topVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, bottomRightPt, this.bottomRightPt_leftVertex, directLinePaint, circlePaint);
 
             bottomLeftPt = new PointF(DrawView.xMinR, DrawView.yMaxR);
             circlePaint.setColor(Color.rgb(139, 69, 19));
             directLinePaint.setColor(Color.rgb(139, 69, 19)); //saddle brown
-            this.drawDirectLine(canvas, this.sunPt, bottomLeftPt, directLinePaint, circlePaint, false, true);
+            deltaCords = this.getLineDeltaCords(new CustomPointF(bottomLeftPt), sunPt);
+            circleParameterPt = new CustomPointF(sunPt.getX() - (DrawView.rBall * deltaCords.getX()), sunPt.getY() - (DrawView.rBall * deltaCords.getY()));
+            this.drawDirectLine(canvas, circleParameterPt, bottomLeftPt, directLinePaint, circlePaint, false, true);
+            //this.drawDirectLine(canvas, this.sunPt, bottomLeftPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, bottomLeftPt, this.bottomLeftPt_topVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, bottomLeftPt, this.bottomLeftPt_RightVertex, directLinePaint, circlePaint);
 
             topCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMinR, DrawView.yMin); //purposely kept yMin instead of yMinR, otherwise ball target will be outside the pocket not pocket
             circlePaint.setColor(Color.rgb(255, 140, 0));
             directLinePaint.setColor(Color.rgb(255, 140, 0)); //dark orange
-            this.drawDirectLine(canvas, this.sunPt, topCenterPt, directLinePaint, circlePaint, false, true);
+            deltaCords = this.getLineDeltaCords(new CustomPointF(topCenterPt), sunPt);
+            circleParameterPt = new CustomPointF(sunPt.getX() - (DrawView.rBall * deltaCords.getX()), sunPt.getY() - (DrawView.rBall * deltaCords.getY()));
+            this.drawDirectLine(canvas, circleParameterPt, topCenterPt, directLinePaint, circlePaint, false, true);
+            //this.drawDirectLine(canvas, this.sunPt, topCenterPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, topCenterPt, this.topCenterPt_LeftVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topCenterPt, this.topCenterPt_BottomVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, topCenterPt, this.topCenterPt_RightVertex, directLinePaint, circlePaint);
@@ -594,7 +618,10 @@ public class DrawView extends View {
             bottomCenterPt = new PointF((DrawView.xMaxR - DrawView.xMinR) / 2 + DrawView.xMinR, DrawView.yMax); //purposely kept yMax instead of yMaxR, otherwise ball target will be outside the pocket not pocket
             circlePaint.setColor(Color.BLUE);
             directLinePaint.setColor(Color.BLUE);
-            this.drawDirectLine(canvas, this.sunPt, bottomCenterPt, directLinePaint, circlePaint, false, true);
+            deltaCords = this.getLineDeltaCords(new CustomPointF(bottomCenterPt), sunPt);
+            circleParameterPt = new CustomPointF(sunPt.getX() - (DrawView.rBall * deltaCords.getX()), sunPt.getY() - (DrawView.rBall * deltaCords.getY()));
+            this.drawDirectLine(canvas, circleParameterPt, bottomCenterPt, directLinePaint, circlePaint, false, true);
+            //this.drawDirectLine(canvas, this.sunPt, bottomCenterPt, directLinePaint, circlePaint, false, true);
             this.drawAngel(canvas, this.sunPt, bottomCenterPt, this.bottomCenterPt_LeftVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, bottomCenterPt, this.bottomCenterPt_TopVertex, directLinePaint, circlePaint);
             this.drawAngel(canvas, this.sunPt, bottomCenterPt, this.bottomCenterPt_RightVertex, directLinePaint, circlePaint);
@@ -604,6 +631,8 @@ public class DrawView extends View {
     private void drawDirectLine(Canvas canvas, PointF startPt, PointF endPt, Paint directLinePaint, Paint circlePaint, boolean shouldDrawStartCircle, boolean shouldDrawEndCircle) {
 
         canvas.drawLine(startPt.x, startPt.y, endPt.x, endPt.y, directLinePaint);
+        canvas.drawCircle(startPt.x, startPt.y, rDot, circlePaint);
+        canvas.drawCircle(endPt.x, endPt.y, rDot, circlePaint);
 
         if (shouldDrawStartCircle)
             canvas.drawCircle(startPt.x, startPt.y, DrawView.rBall, circlePaint);
@@ -623,45 +652,60 @@ public class DrawView extends View {
 
     private void defineSatelites(Canvas canvas) {
         if (this.sunPt != null) {
-            drawSingleSatelite(new CustomPointF(topLeftPt), new CustomPointF(sunPt), canvas);
-            drawSingleSatelite(new CustomPointF(topRightPt), new CustomPointF(sunPt), canvas);
-            drawSingleSatelite(new CustomPointF(bottomLeftPt), new CustomPointF(sunPt), canvas);
-            drawSingleSatelite(new CustomPointF(bottomRightPt), new CustomPointF(sunPt), canvas);
-            drawSingleSatelite(new CustomPointF(topCenterPt), new CustomPointF(sunPt), canvas);
-            drawSingleSatelite(new CustomPointF(bottomCenterPt), new CustomPointF(sunPt), canvas);
+            /*if (DrawView.selectedSatelite == PotHole.TOP_LEFT)
+                drawSingleSatelite(new CustomPointF(topLeftPt), new CustomPointF(sunPt), canvas);
+
+            if (DrawView.selectedSatelite == PotHole.TOP_RIGHT)
+                drawSingleSatelite(new CustomPointF(topRightPt), new CustomPointF(sunPt), canvas);
+
+            if (DrawView.selectedSatelite == PotHole.BOTTOM_LEFT)
+                drawSingleSatelite(new CustomPointF(bottomLeftPt), new CustomPointF(sunPt), canvas);
+
+            if (DrawView.selectedSatelite == PotHole.BOTTOM_RIGHT)
+                drawSingleSatelite(new CustomPointF(bottomRightPt), new CustomPointF(sunPt), canvas);
+
+            if (DrawView.selectedSatelite == PotHole.TOP_CENTER)
+                drawSingleSatelite(new CustomPointF(topCenterPt), new CustomPointF(sunPt), canvas);
+
+            if (DrawView.selectedSatelite == PotHole.BOTTOM_CENTER)
+                drawSingleSatelite(new CustomPointF(bottomCenterPt), new CustomPointF(sunPt), canvas);
+             */
+            this.drawSingleSatelite(DrawView.selectedSatelite, sunPt, canvas);
         }
     }
 
-    private void drawSingleSatelite(CustomPointF potHoleCenter, CustomPointF sunPt, Canvas canvas) {
+    private void drawSingleSatelite(PotHole potHole, CustomPointF sunPt, Canvas canvas) {
+
+        CustomPointF potHoleCenter = this.getPotHole(potHole);
 
         if (potHoleCenter != null && sunPt != null){
 
-            CustomPointF satelitePoint = this.getSateliteCenter(potHoleCenter, sunPt);
+            CustomPointF satelitePoint = this.getSateliteCenter(potHole, sunPt);
 
             Paint sateListPaint = new Paint();
             sateListPaint.setColor(Color.RED);
             sateListPaint.setStrokeWidth(3);
             sateListPaint.setStyle(Paint.Style.STROKE);
-            //        canvas.drawCircle(satelitePoint.getX(), satelitePoint.getY(), DrawView.rBall, sateListPaint);
+            canvas.drawCircle(satelitePoint.getX(), satelitePoint.getY(), DrawView.rBall, sateListPaint);
             canvas.drawLine(satelitePoint.getX(), satelitePoint.getY(), sunPt.getX(), sunPt.getY(), sateListPaint);
             //center dot
-            canvas.drawCircle(satelitePoint.getX(), satelitePoint.getY(), 4, sateListPaint);
+            canvas.drawCircle(satelitePoint.getX(), satelitePoint.getY(), rDot, sateListPaint);
         }
 
     }
 
-    private CustomPointF getSateliteCenter(CustomPointF potHoleCenter, CustomPointF sunPt) {
+    private CustomPointF getLineDeltaCords(CustomPointF potHoleCenter, CustomPointF sunPt) {
         float len = (float) Math.sqrt(((sunPt.getX()-potHoleCenter.getX()) * (sunPt.getX()-potHoleCenter.getX()))
                 + ((sunPt.getY() - potHoleCenter.getY())*(sunPt.getY() - potHoleCenter.getY())));
 
         float dx = (sunPt.getX()-potHoleCenter.getX()) / len;
         float dy = (sunPt.getY()-potHoleCenter.getY()) / len;
 
-        CustomPointF satelitePoint = new CustomPointF(sunPt.getX() + (DrawView.rBall * dx * 2), sunPt.getY() + (DrawView.rBall * dy * 2));
-        return satelitePoint;
+        CustomPointF deltaCords = new CustomPointF(dx, dy);
+        return deltaCords;
     }
 
-    private CustomPointF getSateliteCenter(CustomPointF sunPt, PotHole potHole) {
+    private CustomPointF getPotHole(PotHole potHole) {
         CustomPointF potHoleCenter;
         switch (potHole) {
             case TOP_LEFT:
@@ -686,7 +730,14 @@ public class DrawView extends View {
                 potHoleCenter = null;
                 break;
         }
-        CustomPointF satelitePoint = this.getSateliteCenter(potHoleCenter, sunPt);
+
+        return potHoleCenter;
+    }
+
+    private CustomPointF getSateliteCenter(PotHole potHole, CustomPointF sunPt) {
+        CustomPointF potHoleCenter = this.getPotHole(potHole);
+        CustomPointF deltaCords = this.getLineDeltaCords(potHoleCenter, sunPt);
+        CustomPointF satelitePoint = new CustomPointF(sunPt.getX() + (DrawView.rBall * deltaCords.getX() * 2), sunPt.getY() + (DrawView.rBall * deltaCords.getY() * 2));
         return satelitePoint;
     }
 
